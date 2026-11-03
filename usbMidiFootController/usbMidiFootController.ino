@@ -18,8 +18,10 @@ MIDI_CREATE_DEFAULT_INSTANCE();
 
 // BUTTONS
 const int NButtons = 4; //***  total number of push buttons
+const int NLeds = 2;
 const int buttonPin[NButtons] = {2, 3, 5, 7}; //*** define digital pins connected from button to Arduino; (ie {10, 16, 14, 15, 6, 7, 8, 9, 2, 3, 4, 5}; 12 buttons)
                                         //** Button NOTE will go up chromatically.  ie. if button is digi pin 2, C; Pin 3, C#; Pin 3, D; etc
+const int ledPin[2] = {11, 12};
 const byte controlChangeNumber[NButtons] = {3, 9, 14, 15};
                                    
 int buttonCState[NButtons] = {};        // stores the button current value
@@ -47,6 +49,9 @@ void setup() {
   // Initialize buttons with pull up resistors
   for (int i = 0; i < NButtons; i++) {
     pinMode(buttonPin[i], INPUT_PULLUP);
+  }
+  for (int i = 0; i < NLeds; i++) {
+    pinMode(ledPin[i], OUTPUT);
   }
 
 }
@@ -79,6 +84,9 @@ void buttons() {
 
           // MIDI.sendNoteOn(note + i, 127, midiCh); // note, velocity, channel
           MIDI.sendControlChange(controlChangeNumber[i],127, midiCh);
+          if(i< NLeds){
+            digitalWrite(ledPin[i], HIGH);
+          }
 
 
         }
@@ -88,6 +96,9 @@ void buttons() {
 
           // MIDI.sendNoteOn(note + i, 0, midiCh); // note, velocity, channel
           MIDI.sendControlChange(controlChangeNumber[i], 0, midiCh);
+          if(i< NLeds){
+            digitalWrite(ledPin[i], LOW);
+          }
 
         }
         buttonPState[i] = buttonCState[i];
