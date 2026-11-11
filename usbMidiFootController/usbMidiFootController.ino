@@ -20,8 +20,12 @@ const int NLeds = 2;
 const int buttonPin[NButtons] = {2, 3, 4, 5}; 
 // const int ledPin[NLeds] = {11, 12};
 const int ledPin[NLeds] = {6, 7};
-const int isLongPressActive[NButtons] = {1,1,0,0}; // For each button, 1 to select whether long press is an active command.
+// const int isToggle[NButtons] = {1,1,0,0};
+const int isToggle[NButtons] = {0,0,0,0};
+// const int withLongPress[NButtons] = {1,1,0,0}; // For each button, 1 to select whether long press is an active command.
                                           // If so, short press will trigger on the rising edge (second edge) of the press.
+const int withLongPress[NButtons] = {0,0,0,0}; // For each button, 1 to select whether long press is an active command.
+  // If so, short press will trigger on the rising edge (second edge) of the press.
 
 const byte shortPressCC[NButtons] = {3, 9, 14, 15}; 
 const byte longPressCC[NButtons] = {85, 86, 87, 88}; 
@@ -59,10 +63,7 @@ void setup() {
 }
 
 
-// LOOP
-void loop() {
-  buttons();
-}
+
 
 
 // BUTTONS
@@ -72,75 +73,159 @@ void writeLED(int i, byte state){
   }
 }
 
-void buttons() {
-  for (int i = 0; i < NButtons; i++) {
-    buttonCState[i] = digitalRead(buttonPin[i]);  // read pins from arduino
+void toggleButtonsWithLongPress(int i){
+  if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+    if (buttonPState[i] != buttonCState[i]) { // Button State is CHANGED
+      lastDebounceTime[i] = millis();
+      if (buttonCState[i] == LOW) { // Button just pressed
 
-    if (sendShortPressCC0[i]){
-      shortPressCC0Iterations[i]++;
-      if(shortPressCC0Iterations[i] >= NIterations){
-        sendShortPressCC0[i] = 0;
-        shortPressCC0Iterations[i] = 0;
-        MIDI.sendControlChange(shortPressCC[i], 0, midiCh);
-        writeLED(i,LOW);
-      }
-    }
-
-    if (sendLongPressCC0[i]){
-      longPressCC0Iterations[i]++;
-      if(longPressCC0Iterations[i] >= NIterations){
-        sendLongPressCC0[i] = 0;
-        longPressCC0Iterations[i] = 0;
-        MIDI.sendControlChange(longPressCC[i], 0, midiCh);
-        if(i< NLeds){
-          digitalWrite(ledPin[i], LOW);
-        }
-      }
-    }
-
-    if ((millis() - lastDebounceTime[i]) > debounceDelay) {
-      if (buttonPState[i] != buttonCState[i]) { // Button State is changed
-        lastDebounceTime[i] = millis();
-      
-        if (buttonCState[i] == LOW) { // Button just pressed
-          writeLED(i,HIGH);
-          if(!isLongPressActive[i]){
-            MIDI.sendControlChange(shortPressCC[i], 127, midiCh);
-          } else {
-            lastFrontEdgeTime[i] = millis();
-            isButtonHeld[i] = 1;
-          }
-        } else { // button just released
-          if(!isLongPressActive[i]){
-            MIDI.sendControlChange(shortPressCC[i], 0, midiCh);
-            writeLED(i,LOW);
-          } else {
-            if (isButtonHeld[i] == 1){
-              isButtonHeld[i] = 0;
-              sendShortPressCC0[i] = 1;
-              MIDI.sendControlChange(shortPressCC[i], 127, midiCh);
-              writeLED(i,LOW);
-            }
-          }
-        } 
-        buttonPState[i] = buttonCState[i];
-      } else { // Button State is UNCHANGED
-        if (isLongPressActive[i]){
-          if (buttonCState[i] == LOW && isButtonHeld[i] == 1) { // Button is being held
-            if ((millis() - lastFrontEdgeTime[i]) > longPressDelay){
-              isButtonHeld[i] = 0;
-              sendLongPressCC0[i] = 1;
-              MIDI.sendControlChange(longPressCC[i], 127, midiCh);
-              writeLED(i,LOW);
-              // flicker()
-
-            }
-          }
-
-        }
+      } else if (buttonCState[i] == HIGH){ // button just released
 
       }
+      buttonPState[i] = buttonCState[i];
+    } else { // Button State is UNCHANGED
 
     }
   }
 }
+
+void toggleButtonsWithoutLongPress(int i){
+  if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+    if (buttonPState[i] != buttonCState[i]) { // Button State is CHANGED
+      lastDebounceTime[i] = millis();
+      if (buttonCState[i] == LOW) { // Button just pressed
+
+      } else if (buttonCState[i] == HIGH){ // button just released
+
+      }
+      buttonPState[i] = buttonCState[i];
+    } else { // Button State is UNCHANGED
+
+    }
+  }
+}
+
+void momentaryButtonsWithLongPress(int i){
+  if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+    if (buttonPState[i] != buttonCState[i]) { // Button State is CHANGED
+      lastDebounceTime[i] = millis();
+      if (buttonCState[i] == LOW) { // Button just pressed
+
+      } else if (buttonCState[i] == HIGH){ // button just released
+
+      }
+      buttonPState[i] = buttonCState[i];
+    } else { // Button State is UNCHANGED
+
+    }
+  }
+}
+
+void momentaryButtonsWithoutLongPress(int i){
+  if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+    if (buttonPState[i] != buttonCState[i]) { // Button State is CHANGED
+      lastDebounceTime[i] = millis();
+      if (buttonCState[i] == LOW) { // Button just pressed
+        writeLED(i,HIGH);
+        MIDI.sendControlChange(shortPressCC[i], 127, midiCh);
+      } else if (buttonCState[i] == HIGH){ // button just released
+        writeLED(i,LOW);
+        MIDI.sendControlChange(shortPressCC[i], 0, midiCh);
+      }
+      buttonPState[i] = buttonCState[i];      
+    } else { // Button State is UNCHANGED
+    }
+  }
+}
+
+// LOOP
+void loop() {
+  for (int i = 0; i < NButtons; i++) {
+    buttonCState[i] = digitalRead(buttonPin[i]);
+    
+    if(isToggle[i]){
+      if(withLongPress[i]){
+        toggleButtonsWithLongPress(i);
+      } else if (!withLongPress[i]){
+        toggleButtonsWithoutLongPress(i);
+      }
+    } else if (!isToggle[i]){
+      if(withLongPress[i]){
+        momentaryButtonsWithLongPress(i);
+      } else if (!withLongPress[i]){
+        momentaryButtonsWithoutLongPress(i);
+      }
+    }
+  }
+}
+
+// int debouncePin(int )
+
+//     if (sendShortPressCC0[i]){
+//       shortPressCC0Iterations[i]++;
+//       if(shortPressCC0Iterations[i] >= NIterations){
+//         sendShortPressCC0[i] = 0;
+//         shortPressCC0Iterations[i] = 0;
+//         MIDI.sendControlChange(shortPressCC[i], 0, midiCh);
+//         writeLED(i,LOW);
+//       }
+//     }
+
+//     if (sendLongPressCC0[i]){
+//       longPressCC0Iterations[i]++;
+//       if(longPressCC0Iterations[i] >= NIterations){
+//         sendLongPressCC0[i] = 0;
+//         longPressCC0Iterations[i] = 0;
+//         MIDI.sendControlChange(longPressCC[i], 0, midiCh);
+//         if(i< NLeds){
+//           digitalWrite(ledPin[i], LOW);
+//         }
+//       }
+//     }
+
+//     if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+//       if (buttonPState[i] != buttonCState[i]) { // Button State is changed
+//         lastDebounceTime[i] = millis();
+      
+//         if (buttonCState[i] == LOW) { // Button just pressed
+//           writeLED(i,HIGH);
+//           if(!withLongPress[i]){
+//             MIDI.sendControlChange(shortPressCC[i], 127, midiCh);
+//           } else {
+//             lastFrontEdgeTime[i] = millis();
+//             isButtonHeld[i] = 1;
+//           }
+//         } else { // button just released
+//           if(!withLongPress[i]){
+//             MIDI.sendControlChange(shortPressCC[i], 0, midiCh);
+//             writeLED(i,LOW);
+//           } else {
+//             if (isButtonHeld[i] == 1){
+//               isButtonHeld[i] = 0;
+//               sendShortPressCC0[i] = 1;
+//               MIDI.sendControlChange(shortPressCC[i], 127, midiCh);
+//               writeLED(i,LOW);
+//             }
+//           }
+//         } 
+//         buttonPState[i] = buttonCState[i];
+//       } else { // Button State is UNCHANGED
+//         if (withLongPress[i]){
+//           if (buttonCState[i] == LOW && isButtonHeld[i] == 1) { // Button is being held
+//             if ((millis() - lastFrontEdgeTime[i]) > longPressDelay){
+//               isButtonHeld[i] = 0;
+//               sendLongPressCC0[i] = 1;
+//               MIDI.sendControlChange(longPressCC[i], 127, midiCh);
+//               writeLED(i,LOW);
+//               // flicker()
+
+//             }
+//           }
+
+//         }
+
+//       }
+
+//     }
+//   }
+// }
